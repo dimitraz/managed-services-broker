@@ -1,7 +1,0 @@
-apiVersion: servicecatalog.k8s.io/v1beta1
-kind: ClusterServiceBroker
-metadata:
-  name: managed-services-broker
-spec:
-  url: https://managed-services-broker-test.10.32.240.65.nip.io
-  caBundle: 

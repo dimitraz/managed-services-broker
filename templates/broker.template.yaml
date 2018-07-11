@@ -1,0 +1,118 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: managed-services-broker
+objects:
+  - apiVersion: v1
+    kind: Service
+    metadata:
+      name: managed-services-broker
+      labels:
+        app:  managed-services-broker
+    spec:
+      selector:
+        app:  managed-services-broker
+      ports:
+      - protocol: TCP
+        port: 8080
+        targetPort: 8080
+
+  - apiVersion: extensions/v1beta1
+    kind: Deployment
+    metadata:
+      name: managed-services-broker
+      labels:
+        app:  managed-services-broker
+    spec:
+      replicas: 1
+      selector:
+        matchLabels:
+          app:  managed-services-broker
+      template:
+        metadata:
+          labels:
+            app:  managed-services-broker
+        spec:
+          containers:
+          - name: managed-services-broker
+            image: ${IMAGE_NAME}
+            imagePullPolicy: ${IMAGE_PULL_POLICY}
+            args:
+            - --port
+            - "8080"
+            - --tlsCert
+            - ${TLS_CERT}
+            - --tlsKey
+            - ${TLS_KEY}
+            ports:
+            - containerPort: 8080
+            readinessProbe:
+              tcpSocket:
+                port: 8080
+              failureThreshold: 1
+              initialDelaySeconds: 10
+              periodSeconds: 10
+              successThreshold: 1
+              timeoutSeconds: 2
+            livenessProbe:
+              tcpSocket:
+                port: 8080
+              failureThreshold: 3
+              initialDelaySeconds: 10
+              periodSeconds: 10
+              successThreshold: 1
+              timeoutSeconds: 2
+
+  - apiVersion: v1
+    kind: Route
+    metadata:
+      name: asb-1338
+      labels:
+        app: managed-services-broker
+        service: managed-services-broker
+    spec:
+      to:
+        kind: Service
+        name: managed-services-broker
+      port:
+        targetPort: port-8080
+      # tls:
+      #   termination: reencrypt
+
+  - apiVersion: servicecatalog.k8s.io/v1beta1
+    kind: ClusterServiceBroker
+    metadata:
+      name: managed-services-broker
+      # namespace: ${NAMESPACE}
+    spec:
+      url: ${BROKER_URL}
+      caBundle: ${CA_BUNDLE}
+
+parameters:
+- name: NAMESPACE
+  description: Namespace of the project that is being deployed to
+  value: "my-project"
+
+- name: BROKER_URL
+  description: URL of the Managed Services Broker
+  value: "http://managed-services-broker.test6.svc:8080"
+
+- name: CA_BUNDLE
+  description: Test
+  value: ""
+
+- name: IMAGE_NAME
+  description: Test
+  value: "dimitraz/managed-service-broker:1.0.0"
+
+- name: IMAGE_PULL_POLICY
+  description: Test
+  value: "Always"
+
+- name: TLS_CERT
+  description: Test
+  value: ""
+
+- name: TLS_KEY
+  description: Test
+  value: ""

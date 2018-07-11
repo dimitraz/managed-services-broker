@@ -1,17 +1,19 @@
 apiVersion: v1
 kind: Template
 metadata:
-  name: managed-services-broker
+  name: msb
 objects:
   - apiVersion: v1
     kind: Service
     metadata:
-      name: managed-services-broker
+      name: msb
       labels:
         app:  managed-services-broker
+        service: msb
     spec:
       selector:
         app:  managed-services-broker
+        service: msb
       ports:
       - protocol: TCP
         port: 8080
@@ -20,9 +22,10 @@ objects:
   - apiVersion: extensions/v1beta1
     kind: Deployment
     metadata:
-      name: managed-services-broker
+      name: msb
       labels:
         app:  managed-services-broker
+        service: msb
     spec:
       replicas: 1
       selector:
@@ -32,6 +35,7 @@ objects:
         metadata:
           labels:
             app:  managed-services-broker
+            service: msb
         spec:
           containers:
           - name: managed-services-broker
@@ -66,53 +70,54 @@ objects:
   - apiVersion: v1
     kind: Route
     metadata:
-      name: asb-1338
+      name: msb
       labels:
         app: managed-services-broker
-        service: managed-services-broker
+        service: msb
     spec:
       to:
         kind: Service
-        name: managed-services-broker
+        name: msb
       port:
-        targetPort: port-8080
+        targetPort: 8080
       # tls:
       #   termination: reencrypt
 
   - apiVersion: servicecatalog.k8s.io/v1beta1
     kind: ClusterServiceBroker
     metadata:
-      name: managed-services-broker
-      # namespace: ${NAMESPACE}
+      name: ansible-service-broker
     spec:
-      url: ${BROKER_URL}
-      caBundle: ${CA_BUNDLE}
+      url: https://msb.${NAMESPACE}.svc:8080${BROKER_URL_PREFIX}/
+      # authInfo:
+      #   ${{BROKER_AUTH}}
+      caBundle: ${BROKER_CA_CERT}
 
 parameters:
-- name: NAMESPACE
-  description: Namespace of the project that is being deployed to
-  value: "my-project"
+  - name: NAMESPACE
+    description: Namespace of the project that is being deployed to
+    value: "managed-services-broker"
 
-- name: BROKER_URL
-  description: URL of the Managed Services Broker
-  value: "http://managed-services-broker.test6.svc:8080"
+  - name: CA_BUNDLE
+    description: Test
+    value: ""
 
-- name: CA_BUNDLE
-  description: Test
-  value: ""
+  - name: IMAGE_NAME
+    description: Test
+    value: "dimitraz/managed-service-broker:1.0.0"
 
-- name: IMAGE_NAME
-  description: Test
-  value: "dimitraz/managed-service-broker:1.0.0"
+  - name: IMAGE_PULL_POLICY
+    description: Test
+    value: "Always"
 
-- name: IMAGE_PULL_POLICY
-  description: Test
-  value: "Always"
+  - name: TLS_CERT
+    description: Test
+    value: ""
 
-- name: TLS_CERT
-  description: Test
-  value: ""
+  - name: TLS_KEY
+    description: Test
+    value: ""
 
-- name: TLS_KEY
-  description: Test
-  value: ""
+  - name: BROKER_URL_PREFIX 
+    description: Service Broker URL prefix for the cluster
+    value: "/managed-services-broker"

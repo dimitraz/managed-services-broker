@@ -10,6 +10,8 @@ objects:
       labels:
         app:  managed-services-broker
         service: msb
+      annotations:
+        service.alpha.openshift.io/serving-cert-secret-name: msb-tls
     spec:
       selector:
         app:  managed-services-broker
@@ -44,10 +46,17 @@ objects:
             args:
             - --port
             - "8080"
-            - --tlsCert
-            - ${TLS_CERT}
-            - --tlsKey
-            - ${TLS_KEY}
+            env:
+            - name: TLS_CERT
+              valueFrom:
+                secretKeyRef:
+                  name: msb-tls
+                  key: tls.crt
+            - name: TLS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: msb-tls
+                  key: tls.key
             ports:
             - containerPort: 8080
             readinessProbe:
@@ -80,18 +89,18 @@ objects:
         name: msb
       port:
         targetPort: 8080
-      # tls:
-      #   termination: reencrypt
+      tls:
+        termination: reencrypt
 
   - apiVersion: servicecatalog.k8s.io/v1beta1
     kind: ClusterServiceBroker
     metadata:
-      name: ansible-service-broker
+      name: managed-services-broker
     spec:
       url: https://msb.${NAMESPACE}.svc:8080${BROKER_URL_PREFIX}/
       # authInfo:
       #   ${{BROKER_AUTH}}
-      caBundle: ${BROKER_CA_CERT}
+      # caBundle: ${BROKER_CA_CERT}
 
 parameters:
   - name: NAMESPACE
@@ -109,14 +118,6 @@ parameters:
   - name: IMAGE_PULL_POLICY
     description: Test
     value: "Always"
-
-  - name: TLS_CERT
-    description: Test
-    value: ""
-
-  - name: TLS_KEY
-    description: Test
-    value: ""
 
   - name: BROKER_URL_PREFIX 
     description: Service Broker URL prefix for the cluster

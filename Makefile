@@ -1,4 +1,4 @@
-TAG = 1.0.0
+TAG = 1.0.10
 DOCKERORG = dimitraz
 BROKER_IMAGE_NAME = managed-services-broker
 
